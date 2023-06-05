@@ -33,39 +33,28 @@ int main() {
 }
 """
 
-makefile_stub = """SHELL := /bin/bash
+makefile_stub = """
+SHELL := /bin/bash
 
 CXXFLAGS = -g
 
-tests := $(addprefix test-, $(basename $(wildcard *.in)))
+pyin := $(basename $(wildcard *.in.py)) # .in files generated via python script
+pyans := $(basename $(wildcard *.ans.py)) # .ans files generated via python script
+tests := $(addprefix test-, $(basename $(wildcard *.in) $(pyin)))
+$(info tests found: [${tests}])
 vimdiffs := $(addprefix vimdiff-, $(basename $(wildcard *.in)))
 
-test_failed := 0
-
 .ONESHELL:
-.PHONY: test test-%
+.DELETE_ON_ERROR:
+
+.PHONY: test test-% clean
+.INTERMEDIATE: test_failures.out
 test: solution $(tests)
-	@if [ -s test_failures.out ] ; then \
-		echo "Failed tests:" ; \
-		cat test_failures.out ; \
-	else \
-		echo "Success, all tests passed." ; \
-	fi
-	rm -f test_failures.out
+	@if [ -s test_failures.out ]; then echo "Failed tests:" ; cat test_failures.out ; else echo "Success, all tests passed."; fi
+	@rm -f test_failures.out
 test-%: %.out %.ans
 	@echo "$@: comparing $^"
-	@if ! diff $^; then echo $< >> test_failures.out ; fi
-
-.PHONY: vimdiff vimdiff-%
-vimdiff: solution $(vimdiffs)
-	@echo "Done"
-vimdiff-%: .EXTRA_PREREQS = %.in
-vimdiff-%: %.ans %.out
-	vimdiff $^ -c ':to split %:r.in'
-
-clean:
-	rm -f solution
-	rm -f *.out
+	@if ! diff $^; then echo $* >> test_failures.out ; fi
 
 solution: solution.cpp
 
@@ -73,11 +62,34 @@ solution: solution.cpp
 %.out: %.in solution
 	@echo "running test: ./solution < $< > $@"
 	@time ./solution < $< > $@
+
+.PRECIOUS: %.in
+%.in: %.in.py
+	@echo "generating test input: python $< > $@"
+	@python $< > $@
+
+.PRECIOUS: %.ans
+%.ans: %.ans.py
+	@echo "generating test answer: python $< > $@"
+	@python $< > $@
+
+clean:
+	rm -f solution
+	rm -f *.out
+	rm -f $(pyin)
+	rm -f $(pyans)
+
+# recommend using :qa to quit all windows at once
+.PHONY: vimdiff vimdiff-%
+vimdiff: solution $(vimdiffs)
+	@echo "Done"
+vimdiff-%: .EXTRA_PREREQS = %.in
+vimdiff-%: %.ans %.out
+	@vimdiff $^ -c ':to split %:r.in'
 """
 
 
-def download(soln_dir: str):
-    problem = os.path.basename(soln_dir)
+def download(soln_dir: str, problem: str):
     hostname = cfg["kattis"]["hostname"]
     res = requests.get(
         f"https://{hostname}/problems/{problem}/file/statement/samples.zip"
@@ -118,8 +130,7 @@ def login(cfg):
     return res
 
 
-def submit(cfg, cookies, soln_dir, tag=""):
-    problem = os.path.basename(soln_dir)
+def submit(cfg, cookies, soln_dir: str, problem: str, tag=""):
     sub_files = []
     with open(f"{soln_dir}/solution.cpp") as f:
         sub_files = [
@@ -179,27 +190,26 @@ def main():
     parser.add_argument(
         "solution_dir",
         nargs=None,
-        help="directory containing problem. Must have same name as the problem",
+        help="directory containing problem. The basename of the canonical path must have the same name as the problem",
     )
     args = parser.parse_args()
+    problem = os.path.basename(os.path.realpath(args.solution_dir))
     if args.command == "get":
-        download(args.solution_dir)
+        download(args.solution_dir, problem)
     elif args.command == "test":
         print(f"Testing {args.solution_dir}")
         cp = subprocess.run([shutil.which("make"), "-C", args.solution_dir])
         sys.exit(cp.returncode)
     elif args.command == "submit":
         lres = login(cfg)
-        sres = submit(cfg, lres.cookies, args.solution_dir)
+        sres = submit(cfg, lres.cookies, args.solution_dir, problem)
         plain_result = sres.text.replace("<br />", "\n")
         print(plain_result)
         print(f"Submission url: {get_submit_url(cfg, sres)}")
     else:
-        print("invalid command")
+        print(f"invalid command: {args.command}")
         parser.print_help()
-    pass
 
 
 if __name__ == "__main__":
     main()
-    # download(sys.argv[1])
