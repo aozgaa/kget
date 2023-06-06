@@ -132,17 +132,19 @@ def login(cfg):
 
 def submit(cfg, cookies, soln_dir: str, problem: str, tag=""):
     sub_files = []
-    with open(f"{soln_dir}/solution.cpp") as f:
-        sub_files = [
-            (
-                "sub_file[]",
-                (
-                    "solution.cpp",
-                    f.read(),
-                    "application/octet-stream",
-                ),
-            )
-        ]
+    for fname in os.listdir(soln_dir):
+        if fname.endswith(".cpp") or fname.endswith(".h"):
+            with open(f"{soln_dir}/{fname}") as f:
+                sub_files.append(
+                    (
+                        "sub_file[]",
+                        (
+                            fname,
+                            f.read(),
+                            "application/octet-stream",
+                        ),
+                    )
+                )
 
     data = {
         "submit": "true",
