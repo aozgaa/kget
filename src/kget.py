@@ -134,6 +134,8 @@ def submit(cfg, cookies, soln_dir: str, problem: str, tag=""):
     sub_files = []
     for fname in os.listdir(soln_dir):
         if fname.endswith(".cpp") or fname.endswith(".h"):
+            if fname.startswith("gen"):
+                continue # skip any gen scripts
             with open(f"{soln_dir}/{fname}") as f:
                 sub_files.append(
                     (
