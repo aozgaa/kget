@@ -1,6 +1,3 @@
-# [ ] add submitter
-# [ ] add tester -- shell out to make
-
 import argparse
 import pathlib
 import configparser
@@ -19,14 +16,58 @@ cfg = configparser.ConfigParser()
 if not cfg.read(config_path):
     raise ValueError(f"could not find config at {config_path}")
 
-cxx_stub = """#include <bits/stdc++.h>
+bits_stub = """#if defined(__clang__)
+#include<cassert>
+#include<cctype>
+#include<climits>
+#include<cmath>
+#include<cstddef>
+#include<cstdint>
+#include<cstdio>
+#include<cstdlib>
+#include<cstring>
+#include<ctime>
+
+#include <array>
+#include <bitset>
+#include <deque>
+// #include <flat_map>
+// #include <flat_set>
+#include <forward_list>
+#include <list>
+#include <map>
+// #include <mdspan>
+#include <queue>
+#include <set>
+// #include <span>
+#include <stack>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+#include <algorithm>
+#include <functional>
+#include <limits>
+#include <numeric>
+// #include <print>
+#include <utility>
+
+using namespace std;
+#elif defined(__GNUG__)
+#include <bits/stdc++.h>
 #include <bits/extc++.h>
 
 using namespace std;
 using namespace __gnu_pbds;
-
 typedef tree<string, null_type, less<string>, rb_tree_tag,
         tree_order_statistics_node_update> ost;
+
+#endif
+"""
+
+cxx_stub = """#include "bits.h"
 
 int main() {
     return 0;
@@ -105,6 +146,7 @@ def download(soln_dir: str, problem: str):
             zip_ref.extractall(f"{soln_dir}")
             print(f"Samples extracted to '{soln_dir}'")
     open(f"{soln_dir}/solution.cpp", "w").write(cxx_stub)
+    open(f"{soln_dir}/bits.h", "w").write(bits_stub)
     open(f"{soln_dir}/Makefile", "w").write(makefile_stub)
 
 
@@ -135,7 +177,7 @@ def submit(cfg, cookies, soln_dir: str, problem: str, tag=""):
     for fname in os.listdir(soln_dir):
         if fname.endswith(".cpp") or fname.endswith(".h"):
             if fname.startswith("gen"):
-                continue # skip any gen scripts
+                continue  # skip any gen scripts
             with open(f"{soln_dir}/{fname}") as f:
                 sub_files.append(
                     (
