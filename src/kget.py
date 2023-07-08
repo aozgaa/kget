@@ -172,9 +172,11 @@ def login(cfg):
     return res
 
 
-def submit(cfg, cookies, soln_dir: str, problem: str, tag=""):
+def submit(cfg, cookies, soln_dir: str, problem: str, files=[], tag=""):
     sub_files = []
-    for fname in os.listdir(soln_dir):
+    if files == []:
+        files = os.listdir(soln_dir)
+    for fname in files:
         if fname.endswith(".cpp") or fname.endswith(".h"):
             if fname.startswith("gen"):
                 continue  # skip any gen scripts
@@ -238,6 +240,12 @@ def main():
         nargs=None,
         help="directory containing problem. The basename of the canonical path must have the same name as the problem",
     )
+    # fixme: make separate parser for subcommands?
+    parser.add_argument(
+            "files",
+            nargs='*',
+            help="list of files to submit. Only applicable for submit command"
+            )
     args = parser.parse_args()
     problem = os.path.basename(os.path.realpath(args.solution_dir))
     if args.command == "get":
@@ -248,7 +256,7 @@ def main():
         sys.exit(cp.returncode)
     elif args.command == "submit":
         lres = login(cfg)
-        sres = submit(cfg, lres.cookies, args.solution_dir, problem)
+        sres = submit(cfg, lres.cookies, args.solution_dir, problem, args.files)
         plain_result = sres.text.replace("<br />", "\n")
         print(plain_result)
         print(f"Submission url: {get_submit_url(cfg, sres)}")
