@@ -1,7 +1,7 @@
 
 SHELL := /bin/bash
 
-CXXFLAGS = -g
+CXXFLAGS = -g -O2 -std=gnu++17 -static -lrt -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
 
 pyin := $(basename $(wildcard *.in.py)) # .in files generated via python script
 pyans := $(basename $(wildcard *.ans.py)) # .ans files generated via python script
