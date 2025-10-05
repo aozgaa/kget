@@ -4,3 +4,4 @@ src/__pycache__/
 src/kget.egg-info/
 src/kget/
 stringmatching/
+.venv/
