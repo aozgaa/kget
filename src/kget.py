@@ -171,13 +171,14 @@ def login(cfg):
 
     return res
 
+_SUFFIXES = [".cpp", ".hpp", ".h"]
 
 def submit(cfg, cookies, soln_dir: str, problem: str, files=[], tag=""):
     sub_files = []
     if files == []:
         files = os.listdir(soln_dir)
     for fname in files:
-        if fname.endswith(".cpp") or fname.endswith(".h"):
+        if any(fname.endswith(suffix) for suffix in _SUFFIXES):
             if fname.startswith("gen"):
                 continue  # skip any gen scripts
             with open(f"{soln_dir}/{fname}") as f:

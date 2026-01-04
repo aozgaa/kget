@@ -10,6 +10,23 @@ Requires `python3` and `make`.
 python3 -m pip install -e git+https://github.com/aozgaa/kget.git#egg=kget
 ```
 
+## Local install with pipx (recommended)
+
+This keeps the CLI isolated and avoids system Python restrictions (PEP 668).
+
+```
+sudo apt install pipx
+pipx ensurepath
+pipx install -e .
+```
+
+After that, `kget` should be on your PATH.
+
+To upgrade or overwrite the local install, run:
+```
+pipx install -e . --force
+```
+
 # Usage
 
 ## Get/Download/Fetch problem
